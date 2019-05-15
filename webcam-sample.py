@@ -1,6 +1,7 @@
 #!/usr/bin/env python3.6
 
 import argparse
+import csv
 import os
 from collections import defaultdict
 
@@ -82,11 +83,15 @@ def write_metrics(frame):
             cv2.putText(frame, str(key.split(".")[1]) + ":", (upper_left_x, upper_left_y), cv2.FONT_HERSHEY_TRIPLEX,
                         0.3,
                         (255, 255, 255))
-            # cv2.putText(frame, str(val), (upper_left_x + 160, upper_left_y), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
-            #             (255, 255, 255))
-            cv2.rectangle(frame, (upper_left_x + 160, upper_left_y), (upper_left_x + 160 + int(val), upper_left_y - 10),
-                          (255, 255, 255),
-                          -1)
+            cv2.putText(frame, str(val), (upper_left_x + 160, upper_left_y), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
+                        (255, 255, 255))
+            # if math.isnan(val):
+            #     val = 0
+            # cv2.rectangle(frame, (upper_left_x + 160, upper_left_y), (upper_left_x + 160 + int(val), upper_left_y -
+            # 10),
+            #               (255, 255, 255),
+            #               -1)
+
             upper_left_y += 25
         for key, val in emotions.items():
             key = str(key)
@@ -95,9 +100,15 @@ def write_metrics(frame):
                         (255, 255, 255))
             # cv2.putText(frame, str(val), (upper_left_x + 160, upper_left_y), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
             #             (255, 255, 255))
-            cv2.rectangle(frame, (upper_left_x + 160, upper_left_y), (upper_left_x + 160 + int(val), upper_left_y - 10),
+            overlay = frame.copy()
+            if math.isnan(val):
+                val = 0
+            cv2.rectangle(overlay, (upper_left_x + 160, upper_left_y),
+                          (upper_left_x + 160 + int(val), upper_left_y - 10),
                           (255, 255, 255),
                           -1)
+            alpha = 0.8
+            cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
             upper_left_y += 25
         for key, val in expressions.items():
             key = str(key)
@@ -105,17 +116,24 @@ def write_metrics(frame):
                         0.3,
                         (255, 255, 255))
 
+            overlay = frame.copy()
             if math.isnan(val):
                 val = 0
-            cv2.rectangle(frame, (upper_right_x + 160, upper_right_y),
-                          (upper_right_x + 160 + int(val * 100), upper_right_y - 10), (255, 255, 255), -1)
 
-            # cv2.putText(frame, str(val), (upper_right_x + 160, upper_right_y), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
-            #             (255, 255, 255))
+            if 'blink' not in key:
+                cv2.rectangle(overlay, (upper_right_x + 160, upper_right_y),
+                              (upper_right_x + 160 + int(val * 100), upper_right_y - 10),
+                              (255, 255, 255),
+                              -1)
+                alpha = 0.8
+                cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
+            else:
+                cv2.putText(frame, str(val), (upper_right_x + 160, upper_right_y), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
+                            (255, 255, 255))
             upper_right_y += 25
 
 
-def run():
+def run(csv_data):
     args = parse_command_line()
     input_file, data = get_command_line_parameters(args)
     detector = af.FrameDetector(data, MAX_NUM_OF_FACES)
@@ -154,6 +172,8 @@ def run():
             except Exception as exp:
                 print(exp)
 
+            write_metrics_to_csv_data_list(csv_data, timestamp)
+
             draw_bounding_box(frame)
 
             write_metrics(frame)
@@ -169,6 +189,21 @@ def run():
     captureFile.release()
     cv2.destroyAllWindows()
     detector.stop()
+    write_csv_data_to_file(csv_data, input_file)
+
+
+def write_metrics_to_csv_data_list(csv_data, timestamp):
+    for fid in measurements_dict.keys():
+        current_frame_data = list()
+        current_frame_data.append(timestamp)
+        current_frame_data.append(fid)
+        for val in measurements_dict[fid].values():
+            current_frame_data.append(val)
+        for val in emotions_dict[fid].values():
+            current_frame_data.append(val)
+        for val in expressions_dict[fid].values():
+            current_frame_data.append(val)
+        csv_data.append(current_frame_data)
 
 
 def parse_command_line():
@@ -179,5 +214,24 @@ def parse_command_line():
     return args
 
 
+def write_csv_data_to_file(csv_data, input_file):
+    header_row = ['Timestamp', 'Face ID', 'Pitch', 'Yaw', 'Roll', 'Interocular distance', 'joy', 'anger', 'surprise',
+                  'valence',
+                  'fear', 'disgust', 'sadness', 'neutral', 'smile', 'brow raise', 'brow furrow', 'nose wrinkle',
+                  'upper lip raise',
+                  'mouth open', 'eye closure', 'cheek raise', 'eye widen', 'inner brow raise', 'lip corner depressor',
+                  'yawn', 'blink', 'blink_rate']
+
+    with open('output.csv', 'w') as csv_file:
+        writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
+        writer.writerows([["Input file: " + input_file.rsplit(os.sep, 1)[1]]])
+        writer.writerows([header_row])
+        for row in csv_data:
+            writer.writerows([row])
+
+        csv_file.close()
+
+
 if __name__ == "__main__":
-    run()
+    csv_data = list()
+    run(csv_data)

@@ -83,7 +83,8 @@ def write_metrics(frame):
                         (255, 255, 255))
             cv2.putText(frame, str(val), (upper_left_x + 160, upper_left_y), cv2.FONT_HERSHEY_TRIPLEX, 0.3,
                         (255, 255, 255))
-            # cv2.rectangle(frame, (upper_left_x + 160, upper_left_y), (upper_left_x + 160 + int(val), upper_left_y - 10),
+            # cv2.rectangle(frame, (upper_left_x + 160, upper_left_y), (upper_left_x + 160 + int(val), upper_left_y -
+            # 10),
             #               (255, 255, 255),
             #               -1)
             upper_left_y += 25
@@ -124,7 +125,7 @@ def run():
 
     file_width = int(captureFile.get(3))
     file_height = int(captureFile.get(4))
-    out = cv2.VideoWriter("output.avi", cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (file_width, file_height))
+    out = cv2.VideoWriter("output1.avi", cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (file_width, file_height))
     count = 0
 
     while captureFile.isOpened():
