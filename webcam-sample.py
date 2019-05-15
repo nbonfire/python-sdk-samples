@@ -197,12 +197,14 @@ def write_metrics_to_csv_data_list(csv_data, timestamp):
         current_frame_data = list()
         current_frame_data.append(timestamp)
         current_frame_data.append(fid)
+        for val in bounding_box_dict[fid]:
+            current_frame_data.append(round(val, 4))
         for val in measurements_dict[fid].values():
-            current_frame_data.append(val)
+            current_frame_data.append(round(val, 4))
         for val in emotions_dict[fid].values():
-            current_frame_data.append(val)
+            current_frame_data.append(round(val, 4))
         for val in expressions_dict[fid].values():
-            current_frame_data.append(val)
+            current_frame_data.append(round(val, 4))
         csv_data.append(current_frame_data)
 
 
@@ -215,16 +217,17 @@ def parse_command_line():
 
 
 def write_csv_data_to_file(csv_data, input_file):
-    header_row = ['Timestamp', 'Face ID', 'Pitch', 'Yaw', 'Roll', 'Interocular distance', 'joy', 'anger', 'surprise',
+    header_row = ['TimeStamp', 'faceId', 'upperLeftX', 'upperLeftY', 'lowerRightX', 'lowerRightY', 'Pitch', 'Yaw',
+                  'Roll', 'interocularDistance', 'joy', 'anger', 'surprise',
                   'valence',
-                  'fear', 'disgust', 'sadness', 'neutral', 'smile', 'brow raise', 'brow furrow', 'nose wrinkle',
-                  'upper lip raise',
-                  'mouth open', 'eye closure', 'cheek raise', 'eye widen', 'inner brow raise', 'lip corner depressor',
-                  'yawn', 'blink', 'blink_rate']
+                  'fear', 'disgust', 'sadness', 'neutral', 'smile', 'browRaise', 'browFurrow', 'noseWrinkle',
+                  'upperLipRaise',
+                  'mouthOpen', 'eyeClosure', 'cheekRaise', 'eyeWiden', 'innerBrowRaise', 'lipCornerDepressor',
+                  'yawn', 'blink', 'blinkRate']
 
     with open('output.csv', 'w') as csv_file:
         writer = csv.writer(csv_file, quoting=csv.QUOTE_ALL)
-        writer.writerows([["Input file: " + input_file.rsplit(os.sep, 1)[1]]])
+        # writer.writerows([["Input file: " + input_file.rsplit(os.sep, 1)[1]]])
         writer.writerows([header_row])
         for row in csv_data:
             writer.writerows([row])
