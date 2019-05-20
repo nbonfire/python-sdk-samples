@@ -37,6 +37,11 @@ class Listener(af.ImageListener):
             measurements_dict[face.get_id()].update(face.get_measurements())
             expressions_dict[face.get_id()].update(face.get_expressions())
             emotions_dict[face.get_id()].update(face.get_emotions())
+            global mood
+            mood = str(face.get_mood())
+            global dominant_emotion
+            dominant_emotion = str(face.get_dominant_emotion().dominant_emotion)
+            print(dominant_emotion)
             bounding_box_dict[face.get_id()] = [face.get_bounding_box()[0].x,
                                                 face.get_bounding_box()[0].y,
                                                 face.get_bounding_box()[1].x,
@@ -115,7 +120,24 @@ def display_measurements_on_screen(key, val, upper_left_y, frame, x1):
                 (255, 255, 255))
 
 
-def display_emotions_on_screen(key, val, upper_left_x, left_padding, upper_left_y, frame, x1):
+def display_mood_and_dominant_emotion_on_screen(attribute, upper_left_y, frame, x1):
+    attribute_key_name = attribute.split(".")[0]
+    attribute_text_width, attribute_text_height = get_text_size(attribute_key_name, cv2.FONT_HERSHEY_SIMPLEX, 1)
+    attribute_val = attribute.split(".")[1]
+    val_text_width, val_text_height = get_text_size(attribute_val, cv2.FONT_HERSHEY_SIMPLEX, 1)
+
+    key_val_width = attribute_text_width + val_text_width
+
+    cv2.putText(frame, attribute_key_name + ": ", (abs(x1 - key_val_width), upper_left_y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                TEXT_SIZE,
+                (255, 255, 255))
+    cv2.putText(frame, attribute_val, (abs(x1 - val_text_width + PADDING_FOR_SEPARATOR), upper_left_y),
+                cv2.FONT_HERSHEY_SIMPLEX, TEXT_SIZE,
+                (255, 255, 255))
+
+
+def display_emotions_on_screen(key, val, upper_left_y, frame, x1):
     key = str(key)
     key_name = key.split(".")[1]
     key_text_width, key_text_height = get_text_size(key_name, cv2.FONT_HERSHEY_SIMPLEX, 1)
@@ -210,20 +232,24 @@ def write_metrics(frame):
         upper_left_y = y1
         upper_right_x = x1 + box_width
         upper_right_y = abs(y2 - box_height)
-        left_padding = 20
 
         for key, val in measurements.items():
             display_measurements_on_screen(key, val, upper_left_y, frame, x1)
+
             upper_left_y += 25
 
         for key, val in emotions.items():
-            display_emotions_on_screen(key, val, upper_left_x, left_padding, upper_left_y, frame, x1)
+            display_emotions_on_screen(key, val, upper_left_y, frame, x1)
             upper_left_y += 25
 
         for key, val in expressions.items():
             display_expressions_on_screen(key, val, upper_right_x, upper_right_y, frame, upper_left_y)
 
             upper_right_y += 25
+
+        display_mood_and_dominant_emotion_on_screen(mood, upper_left_y, frame, x1)
+        upper_left_y += 25
+        display_mood_and_dominant_emotion_on_screen(dominant_emotion, upper_left_y, frame, x1)
 
 
 def run(csv_data):
@@ -370,3 +396,4 @@ def write_csv_data_to_file(csv_data):
 if __name__ == "__main__":
     csv_data = list()
     run(csv_data)
+
