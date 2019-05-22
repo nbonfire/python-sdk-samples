@@ -14,18 +14,27 @@ Steps to run the script:
 1. usage: 
     
         python-sample.py [-h] -d DATA [-i INPUT] [-n NUM_FACES]
+        
+        required arguments:
+        
+            -d DATA, --data DATA  path to directory containing the models
+            
 
         optional arguments:
     
           -h, --help            show this help message and exit
-      
-          d DATA, --data DATA  path to directory containing the models
       
           -i INPUT, --input INPUT
                         path to input video file
                         
           -n NUM_FACES, --num_faces NUM_FACES
                         number of faces to identify in the frame
+                        
+        Note: if only data argument is supplied, the script defaults the run to a webcam and 1 face detection. If any other configuration is required, it can be done using optional arguments.
+        
+
+
+        
 
 
 2. We can use the same script to enable camera as well as input video.
