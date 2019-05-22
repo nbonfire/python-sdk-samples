@@ -58,5 +58,3 @@ Note:
 2. It also writes the individual frames numbered by the framecount in a directory called as "opvideo".
 
 3. The video file is written to a file called as output.avi by the script.
-    
-   

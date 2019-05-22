@@ -1,5 +1,4 @@
-#!/usr/bin/python
-# !/usr/bin/env python3.6
+# !/usr/bin/env python3.5
 import argparse
 import csv
 import os
@@ -37,11 +36,6 @@ class Listener(af.ImageListener):
             measurements_dict[face.get_id()].update(face.get_measurements())
             expressions_dict[face.get_id()].update(face.get_expressions())
             emotions_dict[face.get_id()].update(face.get_emotions())
-            global mood
-            mood = str(face.get_mood())
-            global dominant_emotion
-            dominant_emotion = str(face.get_dominant_emotion().dominant_emotion)
-            print(dominant_emotion)
             bounding_box_dict[face.get_id()] = [face.get_bounding_box()[0].x,
                                                 face.get_bounding_box()[0].y,
                                                 face.get_bounding_box()[1].x,
@@ -52,13 +46,12 @@ class Listener(af.ImageListener):
 
 
 def get_command_line_parameters(args):
-    input_file = args.input
-
-    if input_file == "camera":
-        input_file = 0
-    else:
+    if not args.video is None:
+        input_file = args.video
         if not os.path.isfile(input_file):
             raise ValueError("Please provide a valid input file")
+    else:
+        input_file = int(args.camera)
     data = args.data
     if not os.path.isdir(data):
         raise ValueError("Please check your data file path")
@@ -116,23 +109,6 @@ def display_measurements_on_screen(key, val, upper_left_y, frame, x1):
                 TEXT_SIZE,
                 (255, 255, 255))
     cv2.putText(frame, val_text, (abs(x1 - val_text_width + PADDING_FOR_SEPARATOR), upper_left_y),
-                cv2.FONT_HERSHEY_SIMPLEX, TEXT_SIZE,
-                (255, 255, 255))
-
-
-def display_mood_and_dominant_emotion_on_screen(attribute, upper_left_y, frame, x1):
-    attribute_key_name = attribute.split(".")[0]
-    attribute_text_width, attribute_text_height = get_text_size(attribute_key_name, cv2.FONT_HERSHEY_SIMPLEX, 1)
-    attribute_val = attribute.split(".")[1]
-    val_text_width, val_text_height = get_text_size(attribute_val, cv2.FONT_HERSHEY_SIMPLEX, 1)
-
-    key_val_width = attribute_text_width + val_text_width
-
-    cv2.putText(frame, attribute_key_name + ": ", (abs(x1 - key_val_width), upper_left_y),
-                cv2.FONT_HERSHEY_SIMPLEX,
-                TEXT_SIZE,
-                (255, 255, 255))
-    cv2.putText(frame, attribute_val, (abs(x1 - val_text_width + PADDING_FOR_SEPARATOR), upper_left_y),
                 cv2.FONT_HERSHEY_SIMPLEX, TEXT_SIZE,
                 (255, 255, 255))
 
@@ -228,7 +204,6 @@ def write_metrics(frame):
         x1, y1, x2, y2 = get_bounding_box_points(fid)
         box_height = y2 - y1
         box_width = x2 - x1
-        upper_left_x = abs(box_width - x1)
         upper_left_y = y1
         upper_right_x = x1 + box_width
         upper_right_y = abs(y2 - box_height)
@@ -246,10 +221,6 @@ def write_metrics(frame):
             display_expressions_on_screen(key, val, upper_right_x, upper_right_y, frame, upper_left_y)
 
             upper_right_y += 25
-
-        display_mood_and_dominant_emotion_on_screen(mood, upper_left_y, frame, x1)
-        upper_left_y += 25
-        display_mood_and_dominant_emotion_on_screen(dominant_emotion, upper_left_y, frame, x1)
 
 
 def run(csv_data):
@@ -293,7 +264,7 @@ def run(csv_data):
 
             write_metrics_to_csv_data_list(csv_data, timestamp)
 
-            if len(num_faces) > 0 and check_bounding_box_outside(width, height) == False:
+            if len(num_faces) > 0 and not check_bounding_box_outside(width, height):
                 draw_bounding_box(frame)
                 draw_affectiva_logo(frame, width, height)
                 write_metrics(frame)
@@ -301,10 +272,11 @@ def run(csv_data):
                 cv2.imshow('Frame', frame)
                 cv2.imwrite(os.path.join("opvideo", "frame{:d}.jpg".format(count)), frame)  # save frame as JPEG file
             else:
-                clear_all_dictionaries()
                 draw_affectiva_logo(frame, width, height)
                 cv2.imshow('Frame', frame)
                 cv2.imwrite(os.path.join("opvideo", "frame{:d}.jpg".format(count)), frame)  # save frame as JPEG file
+
+            clear_all_dictionaries()
 
             if cv2.waitKey(1) == 27:
                 break
@@ -367,10 +339,12 @@ def write_metrics_to_csv_data_list(csv_data, timestamp):
 def parse_command_line():
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--data", dest="data", required=True, help="path to directory containing the models")
-    parser.add_argument("-i", "--input", dest="input", required=False, default="camera",
+    parser.add_argument("-v", "--video", dest="video", required=False,
                         help="path to input video file")
     parser.add_argument("-n", "--num_faces", dest="num_faces", required=False, default=1,
                         help="number of faces to identify in the frame")
+    parser.add_argument("-c", "--camera", dest="camera", required=False, const="0", nargs='?', default=0,
+                        help="enable this parameter take input from the webcam and provide a camera id for the webcam")
     args = parser.parse_args()
     return args
 
@@ -396,4 +370,3 @@ def write_csv_data_to_file(csv_data):
 if __name__ == "__main__":
     csv_data = list()
     run(csv_data)
-
