@@ -480,7 +480,7 @@ def clear_all_dictionaries():
 
 
 def draw_affectiva_logo(frame, width, height):
-    logo = cv2.imread("Final logo - RGB Magenta.png")
+    logo = cv2.imread(os.path.dirname(os.path.abspath(__file__))+"/Final logo - RGB Magenta.png")
     logo_width = int(width / 3)
     logo_height = int(height / 10)
     logo = cv2.resize(logo, (logo_width, logo_height))
