@@ -25,12 +25,12 @@ expressions_dict = defaultdict()
 emotions_dict = defaultdict()
 bounding_box_dict = defaultdict()
 
-"""Listener class that return metrics for processed frames.
-
-"""
-
 
 class Listener(af.ImageListener):
+    """Listener class that return metrics for processed frames.
+
+    """
+
     def __init__(self):
         super(Listener, self).__init__()
 
@@ -61,21 +61,19 @@ class Listener(af.ImageListener):
         capture_last_ts = image.timestamp()
 
 
-"""read parameters entered on the command line.
-
-    Parameters
-    ----------
-    args: argparse
-        object of argparse module
-
-    Returns
-    -------
-    tuple of str values
-        details about input file name, data directory, num of faces to detect, output file name
-    """
-
-
 def get_command_line_parameters(args):
+    """read parameters entered on the command line.
+
+        Parameters
+        ----------
+        args: argparse
+            object of argparse module
+
+        Returns
+        -------
+        tuple of str values
+            details about input file name, data directory, num of faces to detect, output file name
+        """
     if not args.video is None:
         input_file = args.video
         if not os.path.isfile(input_file):
@@ -91,17 +89,15 @@ def get_command_line_parameters(args):
     return input_file, data, max_num_of_faces, output_file, csv_file
 
 
-"""For each frame, draw the bounding box on screen.
-
-    Parameters
-    ----------
-    frame: affvisionPy.Frame
-        Frame object to draw the bounding box on.
-
-    """
-
-
 def draw_bounding_box(frame):
+    """For each frame, draw the bounding box on screen.
+
+        Parameters
+        ----------
+        frame: affvisionPy.Frame
+            Frame object to draw the bounding box on.
+
+        """
     for fid, bb_points in bounding_box_dict.items():
         x1, y1, x2, y2 = get_bounding_box_points(fid)
         for key in emotions_dict[fid]:
@@ -119,86 +115,78 @@ def draw_bounding_box(frame):
             cv2.rectangle(frame, (x1, y1), (x2, y2), (21, 169, 167), 3)
 
 
-"""Fetch upper left_x, upper left_y, upper_right_x,upper_right_y points of the bounding box.
-
-    Parameters
-    ----------
-    fid: int
-        face id of the face to get the bounding box for
-        
-    Returns
-    -------
-    tuple of int values
-        tuple with upper left_x, upper left_y, upper_right_x,upper_right_y values
-    """
-
-
 def get_bounding_box_points(fid):
+    """Fetch upper left_x, upper left_y, upper_right_x,upper_right_y points of the bounding box.
+
+        Parameters
+        ----------
+        fid: int
+            face id of the face to get the bounding box for
+
+        Returns
+        -------
+        tuple of int values
+            tuple with upper left_x, upper left_y, upper_right_x,upper_right_y values
+        """
     return (int(bounding_box_dict[fid][0]),
             int(bounding_box_dict[fid][1]),
             int(bounding_box_dict[fid][2]),
             int(bounding_box_dict[fid][3]))
 
 
-"""Round up the number to the nearest 10.
-
-   Parameters
-   ----------
-   num: int
-       number to be rounded up to 10.
-
-   Returns
-   -------
-   int
-       Rounded up value of the number to 10
-   """
-
-
 def roundup(num):
+    """Round up the number to the nearest 10.
+
+       Parameters
+       ----------
+       num: int
+           number to be rounded up to 10.
+
+       Returns
+       -------
+       int
+           Rounded up value of the number to 10
+       """
     return int(math.ceil(num / 10.0)) * 10
 
 
-"""Get the size occupied by a particular text string
-
-   Parameters
-   ----------
-   text: str
-       The text string to find size of.
-   font: str
-       font size of the text string
-   thickness: int
-       thickness of the font
-
-   Returns
-   -------
-   tuple of int values
-       text width, text height
-   """
-
-
 def get_text_size(text, font, thickness):
+    """Get the size occupied by a particular text string
+
+       Parameters
+       ----------
+       text: str
+           The text string to find size of.
+       font: str
+           font size of the text string
+       thickness: int
+           thickness of the font
+
+       Returns
+       -------
+       tuple of int values
+           text width, text height
+       """
     text_size = cv2.getTextSize(text, font, TEXT_SIZE, thickness)
     return text_size[0][0], text_size[0][1]
 
 
-"""Display the measurement metrics on screen.
-
-   Parameters
-   ----------
-   key: str
-       Name of the measurement.
-   val: str
-       Value of the measurement.
-   upper_left_y: int
-       the upper_left_y co-ordinate of the bounding box
-   frame: affvisionpy.Frame    
-       Frame object to write the measurement on
-   x1: upper_left_x co-ordinate of the bounding box whose measurements need to be written
-
-   """
-
-
 def display_measurements_on_screen(key, val, upper_left_y, frame, x1):
+    """Display the measurement metrics on screen.
+
+       Parameters
+       ----------
+       key: str
+           Name of the measurement.
+       val: str
+           Value of the measurement.
+       upper_left_y: int
+           the upper_left_y co-ordinate of the bounding box
+       frame: affvisionpy.Frame
+           Frame object to write the measurement on
+       x1: upper_left_x co-ordinate of the bounding box whose measurements need to be written
+
+       """
     key = str(key)
 
     key_name = key.split(".")[1]
@@ -217,24 +205,22 @@ def display_measurements_on_screen(key, val, upper_left_y, frame, x1):
                 (255, 255, 255))
 
 
-"""Display the emotion metrics on screen.
-
-    Parameters
-    ----------
-    key: str
-        Name of the emotion.
-    val: str
-        Value of the emotion.
-    upper_left_y: int
-        the upper_left_y co-ordinate of the bounding box
-    frame: affvisionpy.Frame    
-        Frame object to write the measurement on
-    x1: upper_left_x co-ordinate of the bounding box whose measurements need to be written
-
-"""
-
-
 def display_emotions_on_screen(key, val, upper_left_y, frame, x1):
+    """Display the emotion metrics on screen.
+
+        Parameters
+        ----------
+        key: str
+            Name of the emotion.
+        val: str
+            Value of the emotion.
+        upper_left_y: int
+            the upper_left_y co-ordinate of the bounding box
+        frame: affvisionpy.Frame
+            Frame object to write the measurement on
+        x1: upper_left_x co-ordinate of the bounding box whose measurements need to be written
+
+    """
     key = str(key)
     key_name = key.split(".")[1]
     key_text_width, key_text_height = get_text_size(key_name, cv2.FONT_HERSHEY_SIMPLEX, 1)
@@ -277,26 +263,24 @@ def display_emotions_on_screen(key, val, upper_left_y, frame, x1):
     cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
 
 
-"""Display the emotion metrics on screen.
-
-    Parameters
-    ----------
-    key: str
-        Name of the emotion.
-    val: str
-        Value of the emotion.
-    upper_right_x: int
-        the upper_left_x co-ordinate of the bounding box
-    upper_right_y: int
-        the upper_left_y co-ordinate of the bounding box
-    frame: affvisionpy.Frame    
-        Frame object to write the measurement on
-    upper_left_y: upper_left_y co-ordinate of the bounding box whose measurements need to be written
-
-"""
-
-
 def display_expressions_on_screen(key, val, upper_right_x, upper_right_y, frame, upper_left_y):
+    """Display the emotion metrics on screen.
+
+        Parameters
+        ----------
+        key: str
+            Name of the emotion.
+        val: str
+            Value of the emotion.
+        upper_right_x: int
+            the upper_left_x co-ordinate of the bounding box
+        upper_right_y: int
+            the upper_left_y co-ordinate of the bounding box
+        frame: affvisionpy.Frame
+            Frame object to write the measurement on
+        upper_left_y: upper_left_y co-ordinate of the bounding box whose measurements need to be written
+
+    """
     key = str(key)
 
     key_name = key.split(".")[1]
@@ -336,17 +320,15 @@ def display_expressions_on_screen(key, val, upper_right_x, upper_right_y, frame,
                 (255, 255, 255))
 
 
-"""write measurements, emotions,expressions on screen
-
-   Parameters
-   ----------
-   frame: affvisionpy.Frame
-        frame to write the metrics on
-
-   """
-
-
 def write_metrics(frame):
+    """write measurements, emotions,expressions on screen
+
+       Parameters
+       ----------
+       frame: affvisionpy.Frame
+            frame to write the metrics on
+
+       """
     for fid in measurements_dict.keys():
         measurements = measurements_dict[fid]
         expressions = expressions_dict[fid]
@@ -373,16 +355,14 @@ def write_metrics(frame):
             upper_right_y += 25
 
 
-"""Starting point of the program, initializes the detctor, processes a frame and then writes metrics to frame
-
-   Parameters
-   ----------
-   csv_data: list
-        Values to hold for each frame
-   """
-
-
 def run(csv_data):
+    """Starting point of the program, initializes the detctor, processes a frame and then writes metrics to frame
+
+       Parameters
+       ----------
+       csv_data: list
+            Values to hold for each frame
+       """
     args = parse_command_line()
     input_file, data, max_num_of_faces, output_file, csv_file = get_command_line_parameters(args)
     if isinstance(input_file, int):
@@ -454,33 +434,29 @@ def run(csv_data):
     write_csv_data_to_file(csv_data, csv_file)
 
 
-"""Clears the dictionary values
-   """
-
-
 def clear_all_dictionaries():
+    """Clears the dictionary values
+       """
     bounding_box_dict.clear()
     emotions_dict.clear()
     expressions_dict.clear()
     measurements_dict.clear()
 
 
-"""Place logo on the screen
-
-   Parameters
-   ----------
-   frame: affvisionpy.Frame
-       Frame to place the logo on
-   width: int
-       width of the frame
-   height: int
-       height of the frame
-
-   """
-
-
 def draw_affectiva_logo(frame, width, height):
-    logo = cv2.imread(os.path.dirname(os.path.abspath(__file__))+"/Final logo - RGB Magenta.png")
+    """Place logo on the screen
+
+       Parameters
+       ----------
+       frame: affvisionpy.Frame
+           Frame to place the logo on
+       width: int
+           width of the frame
+       height: int
+           height of the frame
+
+       """
+    logo = cv2.imread(os.path.dirname(os.path.abspath(__file__)) + "/Final logo - RGB Magenta.png")
     logo_width = int(width / 3)
     logo_height = int(height / 10)
     logo = cv2.resize(logo, (logo_width, logo_height))
@@ -495,22 +471,20 @@ def draw_affectiva_logo(frame, width, height):
         frame[y1:y2, x1:x2, c] = color + beta
 
 
-"""Check if bounding box values are going outside the screen in case of face going outside
-
-   Parameters
-   ----------
-   width: int
-       width of the frame
-   height: int
-       height of the frame
-    
-    Returns
-    -------
-    boolean: indicating if the bounding box is outside the frame or not
-   """
-
-
 def check_bounding_box_outside(width, height):
+    """Check if bounding box values are going outside the screen in case of face going outside
+
+       Parameters
+       ----------
+       width: int
+           width of the frame
+       height: int
+           height of the frame
+
+        Returns
+        -------
+        boolean: indicating if the bounding box is outside the frame or not
+       """
     for fid in bounding_box_dict.keys():
         x1, y1, x2, y2 = get_bounding_box_points(fid)
         if x1 < 0 or x2 > width or y1 < 0 or y2 > height:
@@ -518,19 +492,17 @@ def check_bounding_box_outside(width, height):
         return False
 
 
-"""Write metrics per frame to a list
-
-   Parameters
-   ----------
-   csv_data: 
-      list of per frame values to write to
-   timestamp: int
-       timestamp of each frame
-
-   """
-
-
 def write_metrics_to_csv_data_list(csv_data, timestamp):
+    """Write metrics per frame to a list
+
+       Parameters
+       ----------
+       csv_data:
+          list of per frame values to write to
+       timestamp: int
+           timestamp of each frame
+
+       """
     for fid in measurements_dict.keys():
         current_frame_data = list()
         current_frame_data.append(timestamp)
@@ -546,15 +518,13 @@ def write_metrics_to_csv_data_list(csv_data, timestamp):
         csv_data.append(current_frame_data)
 
 
-"""Make the options for command line
-
-   Returns
-   -------
-   args: argparse object of the command line
-   """
-
-
 def parse_command_line():
+    """Make the options for command line
+
+       Returns
+       -------
+       args: argparse object of the command line
+       """
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--data", dest="data", required=True, help="path to directory containing the models")
     parser.add_argument("-v", "--video", dest="video", required=False,
@@ -571,19 +541,17 @@ def parse_command_line():
     return args
 
 
-"""Place logo on the screen
-
-   Parameters
-   ----------
-   csv_data: list
-       list to write the data from
-    csv_file: list
-       file to be written to
-
-   """
-
-
 def write_csv_data_to_file(csv_data, csv_file):
+    """Place logo on the screen
+
+       Parameters
+       ----------
+       csv_data: list
+           list to write the data from
+        csv_file: list
+           file to be written to
+
+       """
     header_row = ['TimeStamp', 'faceId', 'upperLeftX', 'upperLeftY', 'lowerRightX', 'lowerRightY', 'Pitch', 'Yaw',
                   'Roll', 'interocularDistance', 'joy', 'anger', 'surprise',
                   'valence',
