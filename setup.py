@@ -1,18 +1,18 @@
 from setuptools import setup
 
-setup(name='python-sdk-sample',
+setup(name='python-sdk-samples',
       version='1.0',
       description='Sample for python SDK',
-      url='https://bitbucket.org/Affectiva/python-sdk-samples/src/master/',
+      url='https://${HOST_NAME}/Affectiva/python-sdk-samples/src/master/',
       author='Affectiva Engineering',
-      author_email='affdexdev@affectiva.com',
+      author_email='sdk@affectiva.com',
       license='Proprietary',
       classifiers=[
           # How mature is this project? Common values are
           #   3 - Alpha
           #   4 - Beta
           #   5 - Production/Stable
-          'Development Status :: 3 - Alpha',
+          'Development Status :: 5 - Production',
 
           # Indicate who your project is intended for
           'Intended Audience :: Developers',
@@ -23,13 +23,15 @@ setup(name='python-sdk-sample',
 
           # Specify the Python versions you support here. In particular, ensure
           # that you indicate whether you support Python 2, Python 3 or both.
+          'Programming Language :: Python :: 3',
+          'Programming Language :: Python :: 3.5',
           'Programming Language :: Python :: 3.6',
       ],
       install_requires=[
           'opencv-contrib-python'
       ],
       scripts=[
-          'python-sdk-sample/python-sample.py',
+          'python-sdk-samples/python-sample.py',
       ],
 
       )

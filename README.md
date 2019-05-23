@@ -13,7 +13,7 @@ Steps to run the script:
 
 1. usage: 
     
-        python-sample.py [-h] -d DATA [-v VIDEO] [-n NUM_FACES] [-c [CAMERA]]
+        python-sample.py [-h] -d DATA [-v VIDEO] [-n NUM_FACES] [-c [CAMERA]] [-o OUTPUT]
         
         required arguments:
         
@@ -30,10 +30,16 @@ Steps to run the script:
           -n NUM_FACES, --num_faces NUM_FACES
                         number of faces to identify in the frame
                         
+          -o OUTPUT, --output OUTPUT
+                        enable this parameter to save the output video in a video file of your choice
+          
+          -f FILE, --file FILE
+                        enable this parameter to save the output metrics in a csv file of your choice
+                        
           -c [CAMERA], --camera [CAMERA]
                         enable this parameter take input from the webcam and provide a camera id for the webcam
                         
-        Note: if only data argument is supplied, the script defaults the run to a webcam and 1 face detection. If any other configuration is required, it can be done using optional arguments.
+        Note: if only data argument is supplied, the script defaults the run to a webcam and 1 face detection, with the output written to "output.csv" and "output.avi". If any other configuration is required, it can be done using optional arguments.
         
 
 
@@ -56,12 +62,5 @@ Steps to run the script:
     
             python3 python-sample.py -d <path/to/data/directory> -n <num_of_faces_to_detect> -v </path/to/video/file>
         
-Note:
-
-1. The file writes all metrics(expressions, emotions, head angles) to a csv file known as "output.csv".
-
-2. It also writes the individual frames numbered by the framecount in a directory called as "opvideo".
-
-3. The video file is written to a file called as output.avi by the script.
     
    
