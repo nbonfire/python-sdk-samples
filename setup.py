@@ -3,7 +3,7 @@ from setuptools import setup
 setup(name='python-sdk-samples',
       version='1.0',
       description='Sample for python SDK',
-      url='https://${HOST_NAME}/Affectiva/python-sdk-samples/src/master/',
+      url='https://github.com/Affectiva/python-sdk-samples/src/master/',
       author='Affectiva Engineering',
       author_email='sdk@affectiva.com',
       license='Proprietary',
