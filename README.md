@@ -13,6 +13,7 @@ Steps to run the script:
 
 1. usage: 
     
+
         affvisionpy-sample.py [-h] -d DATA [-v VIDEO] [-n NUM_FACES] [-c [CAMERA]] [-o OUTPUT] [-f FILE]
         
         required arguments:
