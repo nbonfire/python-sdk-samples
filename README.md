@@ -4,9 +4,7 @@ Steps to install the app:
 
 1. Make sure you have affvisionpy
 
-2. cd into the directory containing the setup.py script and run: **sudo python3 setup.py install**.
-
-   Alternative to step 2 : cd into the directory having the requirements.txt file and run **pip3 install -r requirements.txt**
+2. cd into the directory having the requirements.txt file and run **pip3 install -r requirements.txt**
 
 
 Steps to run the script:
