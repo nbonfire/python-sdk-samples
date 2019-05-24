@@ -57,7 +57,7 @@ Steps to run the script:
         
     ii. Command to run the script with a video file:
     
-            python3 affvisionoy-sample.py -d <path/to/data/directory> -n <num_of_faces_to_detect> -v </path/to/video/file>
+            python3 affvisionpy-sample.py -d <path/to/data/directory> -n <num_of_faces_to_detect> -v </path/to/video/file>
         
     
 5. When a video file is provided as an input, a csv file is written with the metrics. By default the csv file will
