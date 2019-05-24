@@ -31,7 +31,7 @@ setup(name='python-sdk-samples',
           'opencv-contrib-python'
       ],
       scripts=[
-          'python-sdk-samples/python-sample.py',
+          'python-sdk-samples/affvisionpy-sample.py',
       ],
 
       )

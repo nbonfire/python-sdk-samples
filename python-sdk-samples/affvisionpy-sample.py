@@ -414,12 +414,10 @@ def run(csv_data):
                 draw_bounding_box(frame)
                 draw_affectiva_logo(frame, width, height)
                 write_metrics(frame)
-
                 cv2.imshow('Processed Frame', frame)
             else:
                 draw_affectiva_logo(frame, width, height)
                 cv2.imshow('Processed Frame', frame)
-
             if output_file is not None:
                 out.write(frame)
 

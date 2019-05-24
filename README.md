@@ -4,16 +4,16 @@ Steps to install the app:
 
 1. Make sure you have affvisionpy
 
-2. cd into the directory containing the setup.py script and run: sudo python3 setup.py install.
+2. cd into the directory containing the setup.py script and run: **sudo python3 setup.py install**.
 
-   Alternative to step 2 : cd into the directory having the requirements.txt file and run "pip3 install -r requirements.txt"
+   Alternative to step 2 : cd into the directory having the requirements.txt file and run **pip3 install -r requirements.txt**
 
 
 Steps to run the script:
 
 1. usage: 
     
-        python-sample.py [-h] -d DATA [-v VIDEO] [-n NUM_FACES] [-c [CAMERA]] [-o OUTPUT] [-f FILE]
+        affvisionpy-sample.py [-h] -d DATA [-v VIDEO] [-n NUM_FACES] [-c [CAMERA]] [-o OUTPUT] [-f FILE]
         
         required arguments:
         
@@ -50,13 +50,13 @@ Steps to run the script:
 
     i. Command to run the script with webcam: 
 
-            python3 python-sample.py -d <path/to/data/directory> -c <camera_id> -n <num_of_faces_to_detect>
+            python3 affvisionpy-sample.py -d <path/to/data/directory> -c <camera_id> -n <num_of_faces_to_detect>
             
             Note: If the camera id is not supplied, by default the camera_id 0 is taken
         
     ii. Command to run the script with a video file:
     
-            python3 python-sample.py -d <path/to/data/directory> -n <num_of_faces_to_detect> -v </path/to/video/file>
+            python3 affvisionoy-sample.py -d <path/to/data/directory> -n <num_of_faces_to_detect> -v </path/to/video/file>
         
     
 5. When a video file is provided as an input, a csv file is written with the metrics. By default the csv file will
