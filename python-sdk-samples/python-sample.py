@@ -86,7 +86,7 @@ def get_command_line_parameters(args):
     max_num_of_faces = int(args.num_faces)
     output_file = args.output
     csv_file = args.file
-    return input_file, data, max_num_of_faces, output_file, csv_file
+    return input_file, data, max_num_of_faces, csv_file, output_file
 
 
 def draw_bounding_box(frame):
@@ -145,8 +145,10 @@ def roundup(num):
        Returns
        -------
        int
-           Rounded up value of the number to 10
+           Rounded value of the number to 10
        """
+    if (num / 10.0) < 5:
+        return int(math.floor(num / 10.0)) * 10
     return int(math.ceil(num / 10.0)) * 10
 
 
@@ -244,7 +246,7 @@ def display_emotions_on_screen(key, val, upper_left_y, frame, x1):
     rounded_val /= 10
     rounded_val = abs(int(rounded_val))
 
-    for i in range(0, rounded_val + 1):
+    for i in range(0, rounded_val):
         start_box_point_x += 10
         cv2.rectangle(overlay, (start_box_point_x, upper_left_y),
                       (start_box_point_x + width, upper_left_y - height), (186, 186, 186), -1)
@@ -254,7 +256,7 @@ def display_emotions_on_screen(key, val, upper_left_y, frame, x1):
         else:
             cv2.rectangle(overlay, (start_box_point_x, upper_left_y),
                           (start_box_point_x + width, upper_left_y - height), (0, 204, 102), -1)
-    for i in range(rounded_val + 1, 11):
+    for i in range(rounded_val, 10):
         start_box_point_x += 10
         cv2.rectangle(overlay, (start_box_point_x, upper_left_y),
                       (start_box_point_x + width, upper_left_y - height), (186, 186, 186), -1)
@@ -297,13 +299,13 @@ def display_expressions_on_screen(key, val, upper_right_x, upper_right_y, frame,
         rounded_val = roundup(val)
         rounded_val /= 10
         rounded_val = int(rounded_val)
-        for i in range(0, rounded_val + 1):
+        for i in range(0, rounded_val):
             start_box_point_x += 10
             cv2.rectangle(overlay, (start_box_point_x, upper_right_y),
                           (start_box_point_x + width, upper_right_y - height), (186, 186, 186), -1)
             cv2.rectangle(overlay, (start_box_point_x, upper_right_y),
                           (start_box_point_x + width, upper_right_y - height), (0, 204, 102), -1)
-        for i in range(rounded_val + 1, 11):
+        for i in range(rounded_val + 1, 10):
             start_box_point_x += 10
             cv2.rectangle(overlay, (start_box_point_x, upper_right_y),
                           (start_box_point_x + width, upper_right_y - height), (186, 186, 186), -1)
@@ -364,7 +366,7 @@ def run(csv_data):
             Values to hold for each frame
        """
     args = parse_command_line()
-    input_file, data, max_num_of_faces, output_file, csv_file = get_command_line_parameters(args)
+    input_file, data, max_num_of_faces, csv_file, output_file = get_command_line_parameters(args)
     if isinstance(input_file, int):
         start_time = time.time()
     detector = af.SyncFrameDetector(data, max_num_of_faces)
@@ -376,14 +378,13 @@ def run(csv_data):
 
     detector.start()
 
-    if not os.path.isdir("opvideo"):
-        os.mkdir("opvideo")
-
     captureFile = cv2.VideoCapture(input_file)
 
     file_width = int(captureFile.get(3))
     file_height = int(captureFile.get(4))
-    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (file_width, file_height))
+
+    if output_file is not None:
+        out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (file_width, file_height))
     count = 0
 
     while captureFile.isOpened():
@@ -413,13 +414,14 @@ def run(csv_data):
                 draw_bounding_box(frame)
                 draw_affectiva_logo(frame, width, height)
                 write_metrics(frame)
-                out.write(frame)
+
                 cv2.imshow('Processed Frame', frame)
-                cv2.imwrite(os.path.join("opvideo", "frame{:d}.jpg".format(count)), frame)  # save frame as JPEG file
             else:
                 draw_affectiva_logo(frame, width, height)
                 cv2.imshow('Processed Frame', frame)
-                cv2.imwrite(os.path.join("opvideo", "frame{:d}.jpg".format(count)), frame)  # save frame as JPEG file
+
+            if output_file is not None:
+                out.write(frame)
 
             clear_all_dictionaries()
 
@@ -431,7 +433,16 @@ def run(csv_data):
     captureFile.release()
     cv2.destroyAllWindows()
     detector.stop()
-    write_csv_data_to_file(csv_data, csv_file)
+
+    # If video file is provided asa an input
+    if not isinstance(input_file, int):
+        if csv_file == "default":
+            csv_file = str(input_file.rsplit(os.sep, 1)[1])
+            csv_file = csv_file.split(".")[0]
+        write_csv_data_to_file(csv_data, csv_file)
+    else:
+        if not csv_file == "default":
+            write_csv_data_to_file(csv_data, csv_file)
 
 
 def clear_all_dictionaries():
@@ -505,10 +516,10 @@ def write_metrics_to_csv_data_list(csv_data, timestamp):
        """
     for fid in measurements_dict.keys():
         current_frame_data = list()
-        current_frame_data.append(timestamp)
+        current_frame_data.append(round(timestamp, 0))
         current_frame_data.append(fid)
         for val in bounding_box_dict[fid]:
-            current_frame_data.append(round(val, 4))
+            current_frame_data.append(round(val, 0))
         for val in measurements_dict[fid].values():
             current_frame_data.append(round(val, 4))
         for val in emotions_dict[fid].values():
@@ -527,16 +538,16 @@ def parse_command_line():
        """
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--data", dest="data", required=True, help="path to directory containing the models")
-    parser.add_argument("-v", "--video", dest="video", required=False,
+    parser.add_argument("-i", "--input", dest="video", required=False,
                         help="path to input video file")
     parser.add_argument("-n", "--num_faces", dest="num_faces", required=False, default=1,
                         help="number of faces to identify in the frame")
     parser.add_argument("-c", "--camera", dest="camera", required=False, const="0", nargs='?', default=0,
                         help="enable this parameter take input from the webcam and provide a camera id for the webcam")
-    parser.add_argument("-o", "--output", dest="output", required=False, default="output.avi",
-                        help="enable this parameter to save the output video in a video file pf your choice")
-    parser.add_argument("-f", "--file", dest="file", required=False, default="output.csv",
-                        help="enable this parameter to save the output metrics in a csv file pf your choice")
+    parser.add_argument("-o", "--output", dest="output", required=False,
+                        help="name of the output video file")
+    parser.add_argument("-f", "--file", dest="file", required=False, default="default",
+                        help="name of the output csv file")
     args = parser.parse_args()
     return args
 
@@ -559,13 +570,14 @@ def write_csv_data_to_file(csv_data, csv_file):
                   'upperLipRaise',
                   'mouthOpen', 'eyeClosure', 'cheekRaise', 'eyeWiden', 'innerBrowRaise', 'lipCornerDepressor',
                   'yawn', 'blink', 'blinkRate']
+    if ".csv" not in csv_file:
+        csv_file = csv_file + ".csv"
 
     with open(csv_file, 'w') as c_file:
         writer = csv.writer(c_file, quoting=csv.QUOTE_ALL)
         writer.writerows([header_row])
         for row in csv_data:
             writer.writerows([row])
-
         c_file.close()
 
 
