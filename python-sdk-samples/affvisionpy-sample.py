@@ -435,7 +435,8 @@ def run(csv_data):
     # If video file is provided asa an input
     if not isinstance(input_file, int):
         if csv_file == "default":
-            csv_file = str(input_file.rsplit(os.sep, 1)[1])
+            if os.sep in csv_file:
+                csv_file = str(input_file.rsplit(os.sep, 1)[1])
             csv_file = csv_file.split(".")[0]
         write_csv_data_to_file(csv_data, csv_file)
     else:
