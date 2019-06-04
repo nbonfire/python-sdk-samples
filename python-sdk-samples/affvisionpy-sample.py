@@ -9,12 +9,12 @@ from collections import namedtuple
 import affvisionpy as af
 import cv2 as cv2
 import math
-
+import queue
 
 # Constants
 NOT_A_NUMBER = 'NaN'
 count = 0
-TEXT_SIZE = 0.7
+TEXT_SIZE = 0.6
 PADDING_FOR_SEPARATOR = 5
 THRESHOLD_VALUE_FOR_EMOTIONS = 5
 DECIMAL_ROUNDING_FACTOR = 2
@@ -32,6 +32,10 @@ expressions_dict = defaultdict()
 emotions_dict = defaultdict()
 bounding_box_dict = defaultdict()
 mood_dict = defaultdict()
+time_metrics_dict = {}
+time_metrics_dict['timestamp'] = queue.Queue(maxsize=0)
+time_metrics_dict['cfps'] = queue.Queue(maxsize=0)
+time_metrics_dict['pfps'] = queue.Queue(maxsize=0)
 
 """Listener class that return metrics for processed frames.
 
@@ -44,8 +48,12 @@ class Listener(af.ImageListener):
 
     def results_updated(self, faces, image):
         global process_last_ts
+        timestamp = time_metrics_dict['timestamp'].get()
+        capture_fps = time_metrics_dict['cfps'].get()
+        global count
         process_fps = 1000.0 / (image.timestamp() - process_last_ts)
-        print("pfps: " + str(round(process_fps, 0)))
+        print("timestamp:" + str(round(timestamp, 0)),"Frame " + str(count),"cfps: " + str(round(capture_fps, 0)), "pfps: " + str(round(process_fps, 0)))
+        count +=1
         process_last_ts = image.timestamp()
         self.faces = faces
         global num_faces
@@ -67,7 +75,7 @@ class Listener(af.ImageListener):
     def image_captured(self, image):
         global capture_last_ts
         capture_fps = 1000.0 / (image.timestamp() - capture_last_ts)
-        print("cfps: " + str(round(capture_fps, 0)))
+        time_metrics_dict['cfps'].put(capture_fps)
         capture_last_ts = image.timestamp()
 
 
@@ -92,37 +100,15 @@ def get_command_line_parameters(args):
             raise ValueError("Please provide a valid input video file")
     else:
         input_file = int(args.camera)
-
-    if args.video and not args.file:
-        try:
-            csv_file = input_file.split('.')[0] + '.csv'
-        except Exception as exp:
-            print(exp)
-            raise ValueError("Please provide a valid input video file")
-    elif args.file:
-        csv_file = args.file
-    else:
-        csv_file = DEFAULT_FILE_NAME + '.csv'
-
-    if args.video and not args.output:
-        try:
-            output_file = input_file.split('.')[0] + '.avi'
-        except Exception as exp:
-            print(exp)
-            raise ValueError("Please provide a valid input video file")
-    elif args.output:
-        output_file = args.output
-    else:
-        output_file = DEFAULT_FILE_NAME + '.avi'
-
     data = args.data
     if not os.path.isdir(data):
         raise ValueError("Please check your data directory path")
     max_num_of_faces = int(args.num_faces)
-    no_save = args.no_save
+    output_file = args.output
+    csv_file = args.file
     frame_width = int(args.res[0])
     frame_height= int(args.res[1])
-    return input_file, data, max_num_of_faces, output_file, csv_file, no_save, frame_width, frame_height
+    return input_file, data, max_num_of_faces, csv_file, output_file, frame_width, frame_height
 
 
 """For each frame, draw the bounding box on screen.
@@ -189,6 +175,8 @@ def get_bounding_box_points(fid):
 
 
 def roundup(num):
+    if (num / 10.0) < 5:
+        return int(math.floor(num / 10.0)) * 10
     return int(math.ceil(num / 10.0)) * 10
 
 
@@ -278,7 +266,11 @@ def display_emotions_on_screen(key, val, upper_left_y, frame, x1):
     cv2.putText(frame, key_name + ": ", (abs(x1 - key_val_width), upper_left_y),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 TEXT_SIZE,
-                (255, 255, 255))
+                (0, 0,0),4,cv2.LINE_AA)
+    cv2.putText(frame, key_name + ": ", (abs(x1 - key_val_width), upper_left_y),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                TEXT_SIZE,
+                (255, 255, 255),2,cv2.LINE_AA)
     overlay = frame.copy()
 
     if math.isnan(val):
@@ -302,7 +294,7 @@ def display_emotions_on_screen(key, val, upper_left_y, frame, x1):
         else:
             cv2.rectangle(overlay, (start_box_point_x, upper_left_y),
                           (start_box_point_x + width, upper_left_y - height), (0, 204, 102), -1)
-    for i in range(rounded_val + 1, 11):
+    for i in range(rounded_val, 10):
         start_box_point_x += 10
         cv2.rectangle(overlay, (start_box_point_x, upper_left_y),
                       (start_box_point_x + width, upper_left_y - height), (186, 186, 186), -1)
@@ -347,13 +339,13 @@ def display_expressions_on_screen(key, val, upper_right_x, upper_right_y, frame,
         rounded_val = roundup(val)
         rounded_val /= 10
         rounded_val = int(rounded_val)
-        for i in range(0, rounded_val + 1):
+        for i in range(0, rounded_val):
             start_box_point_x += 10
             cv2.rectangle(overlay, (start_box_point_x, upper_right_y),
                           (start_box_point_x + width, upper_right_y - height), (186, 186, 186), -1)
             cv2.rectangle(overlay, (start_box_point_x, upper_right_y),
                           (start_box_point_x + width, upper_right_y - height), (0, 204, 102), -1)
-        for i in range(rounded_val + 1, 11):
+        for i in range(rounded_val + 1, 10):
             start_box_point_x += 10
             cv2.rectangle(overlay, (start_box_point_x, upper_right_y),
                           (start_box_point_x + width, upper_right_y - height), (186, 186, 186), -1)
@@ -362,13 +354,16 @@ def display_expressions_on_screen(key, val, upper_right_x, upper_right_y, frame,
         cv2.addWeighted(overlay, alpha, frame, 1 - alpha, 0, frame)
         upper_left_y += 25
     else:
-        cv2.putText(frame, str(val), (upper_right_x, upper_right_y), cv2.FONT_HERSHEY_SIMPLEX, TEXT_SIZE,
-                    (255, 255, 255))
-
-    cv2.putText(frame, " :" + str(key_name), (upper_right_x + val_rect_width, upper_right_y), cv2.FONT_HERSHEY_SIMPLEX,
+        cv2.putText(frame, str(val), (upper_right_x, upper_right_y), cv2.FONT_HERSHEY_DUPLEX, TEXT_SIZE,
+                    (0, 0, 0),2,cv2.LINE_AA)
+        cv2.putText(frame, str(val), (upper_right_x, upper_right_y), cv2.FONT_HERSHEY_DUPLEX, TEXT_SIZE,
+                    (255, 255, 255),1,cv2.LINE_AA)
+    cv2.putText(frame, " :" + str(key_name), (upper_right_x + val_rect_width, upper_right_y), cv2.FONT_HERSHEY_DUPLEX,
                 TEXT_SIZE,
-                (255, 255, 255))
-
+                (0, 0, 0),4,cv2.LINE_AA)
+    cv2.putText(frame, " :" + str(key_name), (upper_right_x + val_rect_width, upper_right_y), cv2.FONT_HERSHEY_DUPLEX,
+                TEXT_SIZE,
+                (255, 255, 255),1,cv2.LINE_AA)
 
 """write measurements, emotions,expressions on screen
 
@@ -418,7 +413,7 @@ def write_metrics(frame):
 
 def run(csv_data):
     args = parse_command_line()
-    input_file, data, max_num_of_faces, output_file, csv_file, no_save, frame_width, frame_height = get_command_line_parameters(args)
+    input_file, data, max_num_of_faces, csv_file, output_file, frame_width, frame_height = get_command_line_parameters(args)
     if isinstance(input_file, int):
         start_time = time.time()
     detector = af.SyncFrameDetector(data, max_num_of_faces)
@@ -429,10 +424,6 @@ def run(csv_data):
     detector.set_image_listener(list)
 
     detector.start()
-
-    if not no_save:
-        if not os.path.isdir("opvideo"):
-            os.mkdir("opvideo")
 
     captureFile = cv2.VideoCapture(input_file)
     window = cv2.namedWindow('Processed Frame',cv2.WINDOW_NORMAL)
@@ -452,23 +443,24 @@ def run(csv_data):
     else:
         file_width = int(captureFile.get(3))
         file_height = int(captureFile.get(4))
-    out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (file_width, file_height))
+
+    if output_file is not None:
+       out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (file_width, file_height))
     count = 0
-
-
 
     while captureFile.isOpened():
         # Capture frame-by-frame
         ret, frame = captureFile.read()
 
         if ret == True:
+
             height = frame.shape[0]
             width = frame.shape[1]
             if isinstance(input_file, int):
                 timestamp = (time.time() - start_time) * 1000.0
             else:
                 timestamp = int(captureFile.get(cv2.CAP_PROP_POS_MSEC))
-            print("Frame " + str(count) + " timestamp:" + str(round(timestamp, 0)))
+            time_metrics_dict['timestamp'].put(timestamp)
             afframe = af.Frame(width, height, frame, af.ColorFormat.bgr, int(timestamp))
             count += 1
             try:
@@ -477,21 +469,18 @@ def run(csv_data):
 
             except Exception as exp:
                 print(exp)
-            write_metrics_to_csv_data_list(csv_data, timestamp)
+            write_metrics_to_csv_data_list(csv_data, round(timestamp,0))
 
             if len(num_faces) > 0 and not check_bounding_box_outside(width, height):
                 draw_bounding_box(frame)
                 draw_affectiva_logo(frame, width, height)
                 write_metrics(frame)
-                out.write(frame)
                 cv2.imshow('Processed Frame', frame)
-                if not no_save:
-                    cv2.imwrite(os.path.join("opvideo", "frame{:d}.jpg".format(count)), frame)  # save frame as JPEG file
             else:
                 draw_affectiva_logo(frame, width, height)
                 cv2.imshow('Processed Frame', frame)
-                if not no_save:
-                    cv2.imwrite(os.path.join("opvideo", "frame{:d}.jpg".format(count)), frame)  # save frame as JPEG file
+            if output_file is not None:
+                out.write(frame)
 
             clear_all_dictionaries()
 
@@ -503,7 +492,16 @@ def run(csv_data):
     captureFile.release()
     cv2.destroyAllWindows()
     detector.stop()
-    write_csv_data_to_file(csv_data, csv_file)
+
+    # If video file is provided as an input
+
+    if csv_file == "default":
+        if os.sep in csv_file:
+            csv_file = str(input_file.rsplit(os.sep, 1)[1])
+        csv_file = csv_file.split(".")[0]
+        write_csv_data_to_file(csv_data, csv_file)
+    else:
+        write_csv_data_to_file(csv_data, csv_file)
 
 
 """Clears the dictionary values
@@ -515,6 +513,7 @@ def clear_all_dictionaries():
     emotions_dict.clear()
     expressions_dict.clear()
     measurements_dict.clear()
+    mood_dict.clear()
 
 
 """Place logo on the screen
@@ -615,17 +614,16 @@ def parse_command_line():
     By default, the program will run with the camera parameter displaying frames of size 1280 x 720.\n \
     Individual frames will be saved in opvideo directory. If video file supplied, output files will be saved with the same name by default. ")
     parser.add_argument("-d", "--data", dest="data", required=True, help="path to directory containing the models")
-    parser.add_argument("-v", "--video", dest="video", required=False,
+    parser.add_argument("-i", "--input", dest="video", required=False,
                         help="path to input video file")
     parser.add_argument("-n", "--num_faces", dest="num_faces", required=False, default=1,
                         help="number of faces to identify in the frame")
     parser.add_argument("-c", "--camera", dest="camera", required=False, const="0", nargs='?', default=0,
                         help="enable this parameter take input from the webcam and provide a camera id for the webcam")
     parser.add_argument("-o", "--output", dest="output", required=False,
-                        help="enable this parameter to save the output video in a video file pf your choice")
-    parser.add_argument("-f", "--file", dest="file", required=False,
-                        help="enable this parameter to save the output metrics in a csv file pf your choice")
-    parser.add_argument("-x","--no-save", dest="no_save",required=False, action="store_true",default=False, help="set this flag to disable writing output frame files")
+                        help="name of the output video file")
+    parser.add_argument("-f", "--file", dest="file", required=False, default="default",
+                        help="name of the output csv file")
     parser.add_argument("-r", "--resolution",dest='res',metavar=('width','height'),nargs=2,default=[1280,720], help="resolution in pixels (2-values): width height")
     args = parser.parse_args()
     return args
@@ -649,7 +647,8 @@ def write_csv_data_to_file(csv_data, csv_file):
             'brow_raise', 'brow_furrow', 'nose_wrinkle', 'upper_lip_raise', 'mouth_open', 'eye_closure', 'cheek_raise', 'yawn',
             'blink', 'blink_rate', 'eye_widen', 'inner_brow_raise', 'lip_corner_depressor', 'mood', 'dominant_emotion', 'dominant_emotion_confidence'
             ]
-    print(csv_file,csv_data)
+    if ".csv" not in csv_file:
+        csv_file = csv_file + ".csv"
     with open(csv_file, 'w') as c_file:
         keys = csv_data[0].keys()
         writer = csv.DictWriter(c_file,fieldnames=header_row)

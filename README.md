@@ -39,11 +39,9 @@ Steps to run the script:
           -c [CAMERA], --camera [CAMERA]
                         enable this parameter take input from the webcam and provide a camera id for the webcam
 
-          -x --no-save  set this flag to disable outputting individual frame files.
-
           -r --resolution WIDTH HEIGHT set the resolution in pixels (width, height) for the webcam. Defaults to 1280 x 720 resolution.
 
-        Note: if only data argument is supplied, the script defaults the run to a webcam and 1 face detection, with the output written to "output.csv" and "output.avi"
+        Note: if only data argument is supplied, the script defaults the run to a webcam and 1 face detection, with the output written to "default.csv"
         displaying frames at default size of 1280 x 720. Only certain standard frame sizes are supported. For any unsupported frame sizes, the webcam frame size defaults
         to 1280 x 720. If any other configuration is required, it can be done using optional arguments.
 
@@ -65,16 +63,16 @@ Steps to run the script:
 
             python3 affvisionpy-sample.py -d <path/to/data/directory> -n <num_of_faces_to_detect> -v </path/to/video/file>
 
-            When a video file is provided as an input, a csv file is written with the metrics. By default the csv file will be named as the name of the video file.
+            A csv file is written with the metrics. By default the csv file will be named "default.csv".
 
-            When a webcam is used as an input, the script displays real-time metrics on the screen.
+            The script displays real-time metrics on the screen for both video and webcam options.
 
             To get the output metrics in a file of your choice, give the name of the file with -f on the command line.
 
             To get the output video, use the option -o along with the output file name.
 
 
-5. When a video file is provided as an input, a csv file is written with the metrics. By default the csv file will be named as the name of the video file in the same directory.
+5. For both video and webcam options, a csv file is written with the metrics. By default the csv file will be named "default.csv".
 
 6. When a webcam is used as an input, the script displays real-time metrics on the screen.
 
