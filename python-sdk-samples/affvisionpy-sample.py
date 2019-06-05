@@ -26,6 +26,11 @@ process_last_ts = 0.0
 capture_last_ts = 0.0
 
 Mood = namedtuple("Mood",['mood','confidence','dominant_emotion','dominant_emotion_confidence'])
+header_row = ['TimeStamp', 'faceId', 'upperLeftX','upperLeftY', 'lowerRightX', 'lowerRightY','confidence', 'interocular_distance',
+        'pitch', 'yaw','roll','joy', 'anger', 'surprise','valence','fear', 'sadness', 'disgust', 'neutral', 'smile',
+        'brow_raise', 'brow_furrow', 'nose_wrinkle', 'upper_lip_raise', 'mouth_open', 'eye_closure', 'cheek_raise', 'yawn',
+        'blink', 'blink_rate', 'eye_widen', 'inner_brow_raise', 'lip_corner_depressor', 'mood', 'dominant_emotion', 'dominant_emotion_confidence'
+        ]
 
 measurements_dict = defaultdict()
 expressions_dict = defaultdict()
@@ -443,6 +448,7 @@ def run(csv_data):
     else:
         file_width = int(captureFile.get(3))
         file_height = int(captureFile.get(4))
+        cv2.resizeWindow('Processed Frame',file_width,file_height)
 
     if output_file is not None:
        out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (file_width, file_height))
@@ -582,23 +588,32 @@ def check_bounding_box_outside(width, height):
 
 
 def write_metrics_to_csv_data_list(csv_data, timestamp):
-    for fid in measurements_dict.keys():
-        current_frame_data = {}
-        current_frame_data["TimeStamp"] = timestamp
-        current_frame_data["faceId"] = fid
-        x0,y0,x1,y1 = get_bounding_box_points(fid)
-        current_frame_data["upperLeftX"],current_frame_data["upperLeftY"], current_frame_data["lowerRightX"],current_frame_data["lowerRightY"] = x0,y0,x1,y1
-        for key,val in measurements_dict[fid].items():
-            current_frame_data[str(key).split('.')[1]] = round(val,4)
-        for key,val in emotions_dict[fid].items():
-            current_frame_data[str(key).split('.')[1]] = round(val,4)
-        for key,val in expressions_dict[fid].items():
-            current_frame_data[str(key).split('.')[1]] = round(val,4)
-        current_frame_data["mood"] = str(mood_dict[fid].mood).split('.')[1]
-        current_frame_data["dominant_emotion_confidence"] = round(mood_dict[fid].dominant_emotion_confidence,4)
-        current_frame_data["dominant_emotion"] = str(mood_dict[fid].dominant_emotion).split('.')[1]
-        current_frame_data["confidence"] = round(mood_dict[fid].confidence,4)
+    global header_row
+    current_frame_data = {}
+    if not measurements_dict.keys():
+        for field in header_row:
+            if field == "TimeStamp":
+                current_frame_data[field] = timestamp
+            else:
+                current_frame_data[field] = NOT_A_NUMBER
         csv_data.append(current_frame_data)
+    else:
+        for fid in measurements_dict.keys():
+            current_frame_data["TimeStamp"] = timestamp
+            current_frame_data["faceId"] = fid
+            x0,y0,x1,y1 = get_bounding_box_points(fid)
+            current_frame_data["upperLeftX"],current_frame_data["upperLeftY"], current_frame_data["lowerRightX"],current_frame_data["lowerRightY"] = x0,y0,x1,y1
+            for key,val in measurements_dict[fid].items():
+                current_frame_data[str(key).split('.')[1]] = round(val,4)
+            for key,val in emotions_dict[fid].items():
+                current_frame_data[str(key).split('.')[1]] = round(val,4)
+            for key,val in expressions_dict[fid].items():
+                current_frame_data[str(key).split('.')[1]] = round(val,4)
+            current_frame_data["mood"] = str(mood_dict[fid].mood).split('.')[1]
+            current_frame_data["dominant_emotion_confidence"] = round(mood_dict[fid].dominant_emotion_confidence,4)
+            current_frame_data["dominant_emotion"] = str(mood_dict[fid].dominant_emotion).split('.')[1]
+            current_frame_data["confidence"] = round(mood_dict[fid].confidence,4)
+            csv_data.append(current_frame_data)
 
 
 """Make the options for command line
@@ -642,11 +657,7 @@ def parse_command_line():
 
 
 def write_csv_data_to_file(csv_data, csv_file):
-    header_row = ['TimeStamp', 'faceId', 'upperLeftX','upperLeftY', 'lowerRightX', 'lowerRightY','confidence', 'interocular_distance',
-            'pitch', 'yaw','roll','joy', 'anger', 'surprise','valence','fear', 'sadness', 'disgust', 'neutral', 'smile',
-            'brow_raise', 'brow_furrow', 'nose_wrinkle', 'upper_lip_raise', 'mouth_open', 'eye_closure', 'cheek_raise', 'yawn',
-            'blink', 'blink_rate', 'eye_widen', 'inner_brow_raise', 'lip_corner_depressor', 'mood', 'dominant_emotion', 'dominant_emotion_confidence'
-            ]
+    global header_row
     if ".csv" not in csv_file:
         csv_file = csv_file + ".csv"
     with open(csv_file, 'w') as c_file:
