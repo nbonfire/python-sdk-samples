@@ -230,7 +230,7 @@ def display_measurements_on_screen(key, val, upper_left_y, frame, x1):
 
     """
     key = str(key)
-
+    padding = 20
     key_name = key.split(".")[1]
     key_text_width, key_text_height = get_text_size(key_name, cv2.FONT_HERSHEY_SIMPLEX, 1)
     val_text = str(round(val, 2))
@@ -238,11 +238,11 @@ def display_measurements_on_screen(key, val, upper_left_y, frame, x1):
 
     key_val_width = key_text_width + val_text_width
 
-    cv2.putText(frame, key_name + ": ", (abs(x1 - key_val_width), upper_left_y),
+    cv2.putText(frame, key_name + ": ", (abs(x1 - key_val_width - PADDING_FOR_SEPARATOR), upper_left_y),
                 cv2.FONT_HERSHEY_SIMPLEX,
                 TEXT_SIZE,
                 (255, 255, 255))
-    cv2.putText(frame, val_text, (abs(x1 - val_text_width + PADDING_FOR_SEPARATOR), upper_left_y),
+    cv2.putText(frame, val_text, (abs(x1 - val_text_width), upper_left_y),
                 cv2.FONT_HERSHEY_SIMPLEX, TEXT_SIZE,
                 (255, 255, 255))
 
@@ -292,7 +292,7 @@ def display_emotions_on_screen(key, val, upper_left_y, frame, x1):
     rounded_val /= 10
     rounded_val = abs(int(rounded_val))
 
-    for i in range(0, rounded_val + 1):
+    for i in range(0, rounded_val):
         start_box_point_x += 10
         cv2.rectangle(overlay, (start_box_point_x, upper_left_y),
                       (start_box_point_x + width, upper_left_y - height), (186, 186, 186), -1)
@@ -347,13 +347,13 @@ def display_expressions_on_screen(key, val, upper_right_x, upper_right_y, frame,
         rounded_val = roundup(val)
         rounded_val /= 10
         rounded_val = int(rounded_val)
-        for i in range(0, rounded_val):
+        for i in range(0, rounded_val ):
             start_box_point_x += 10
             cv2.rectangle(overlay, (start_box_point_x, upper_right_y),
                           (start_box_point_x + width, upper_right_y - height), (186, 186, 186), -1)
             cv2.rectangle(overlay, (start_box_point_x, upper_right_y),
                           (start_box_point_x + width, upper_right_y - height), (0, 204, 102), -1)
-        for i in range(rounded_val + 1, 10):
+        for i in range(rounded_val, 10):
             start_box_point_x += 10
             cv2.rectangle(overlay, (start_box_point_x, upper_right_y),
                           (start_box_point_x + width, upper_right_y - height), (186, 186, 186), -1)
@@ -436,26 +436,27 @@ def run(csv_data):
 
     captureFile = cv2.VideoCapture(input_file)
     window = cv2.namedWindow('Processed Frame', cv2.WINDOW_NORMAL)
-    cv2.resizeWindow('Processed Frame', frame_width, frame_height)
 
     if not args.video:
+        cv2.resizeWindow('Processed Frame', frame_width, frame_height)
         captureFile.set(cv2.CAP_PROP_FRAME_HEIGHT, frame_height)
         captureFile.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
         #If cv2 silently fails, default to 1280 x 720 instead of 640 x 480
         if captureFile.get(3) != frame_width or captureFile.get(4) != frame_height:
             print(f"{frame_width} x {frame_height} is an unsupported resolution, defaulting to 1280 x 720")
+            cv2.resizeWindow('Processed Frame',DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT)
             captureFile.set(cv2.CAP_PROP_FRAME_HEIGHT, DEFAULT_FRAME_HEIGHT)
             captureFile.set(cv2.CAP_PROP_FRAME_WIDTH, DEFAULT_FRAME_WIDTH)
             frame_width = DEFAULT_FRAME_WIDTH
             frame_height = DEFAULT_FRAME_HEIGHT
-            cv2.resizeWindow('Processed Frame',DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT)
+
         file_width = frame_width
         file_height = frame_height
 
     else:
         file_width = int(captureFile.get(3))
         file_height = int(captureFile.get(4))
-        #cv2.resizeWindow('Processed Frame', file_width,file_height)
+        cv2.resizeWindow('Processed Frame', file_width, file_height)
 
     if output_file is not None:
        out = cv2.VideoWriter(output_file, cv2.VideoWriter_fourcc('M', 'J', 'P', 'G'), 10, (file_width, file_height))
@@ -604,6 +605,7 @@ def write_metrics_to_csv_data_list(csv_data, timestamp):
         csv_data.append(current_frame_data)
     else:
         for fid in measurements_dict.keys():
+            current_frame_data = {}
             current_frame_data["TimeStamp"] = timestamp
             current_frame_data["faceId"] = fid
             upperLeftX, upperLeftY, lowerRightX, lowerRightY = get_bounding_box_points(fid)
