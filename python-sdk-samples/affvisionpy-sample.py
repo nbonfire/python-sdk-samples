@@ -43,6 +43,7 @@ emotions_dict = defaultdict()
 bounding_box_dict = defaultdict()
 mood_dict = defaultdict()
 time_metrics_dict = defaultdict()
+faceId_set = set()
 
 
 
@@ -67,6 +68,7 @@ class Listener(af.ImageListener):
         global num_faces
         num_faces = faces
         for fid, face in faces.items():
+            faceId_set.update(faces.keys())
             measurements_dict[face.get_id()] = defaultdict()
             expressions_dict[face.get_id()] = defaultdict()
             emotions_dict[face.get_id()] = defaultdict()
@@ -595,19 +597,15 @@ def write_metrics_to_csv_data_list(csv_data, timestamp):
 
     """
     global header_row
-    current_frame_data = {}
-    if not measurements_dict.keys():
-        for field in header_row:
-            if field == "TimeStamp":
-                current_frame_data[field] = timestamp
-            else:
+    for fid in faceId_set:
+        current_frame_data = {}
+        current_frame_data["TimeStamp"] = timestamp
+        current_frame_data["faceId"] = fid
+        if fid not in measurements_dict.keys():
+            for field in header_row[2:]:
                 current_frame_data[field] = NOT_A_NUMBER
-        csv_data.append(current_frame_data)
-    else:
-        for fid in measurements_dict.keys():
-            current_frame_data = {}
-            current_frame_data["TimeStamp"] = timestamp
-            current_frame_data["faceId"] = fid
+            csv_data.append(current_frame_data)
+        else:
             upperLeftX, upperLeftY, lowerRightX, lowerRightY = get_bounding_box_points(fid)
             current_frame_data["upperLeftX"] = upperLeftX
             current_frame_data["upperLeftY"] = upperLeftY
