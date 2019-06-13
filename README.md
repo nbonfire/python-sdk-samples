@@ -1,6 +1,6 @@
 # Sample Python App for Affdex SDK #
 
-This script is the python-sdk-sample for the frame detector demo.
+This script demonstrates how to use Affectiva's affvisionpy module to process frames from either a webcam or a video file. It supports displaying the input frames on screen, overlaid with metric values, and can also write the metric values to an output CSV file as well as a video AVI file.
 
 ## Steps to install the app: ##
 

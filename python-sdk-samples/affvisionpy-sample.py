@@ -30,7 +30,8 @@ HEIGHT = 1
 process_last_ts = 0.0
 capture_last_ts = 0.0
 
-Mood = namedtuple("Mood", ['mood','confidence','dominant_emotion','dominant_emotion_confidence'])
+DominantEmotion = namedtuple("DominantEmotion", ['dominant_emotion','dominant_emotion_confidence'])
+
 header_row = ['TimeStamp', 'faceId', 'upperLeftX', 'upperLeftY', 'lowerRightX', 'lowerRightY', 'confidence', 'interocular_distance',
         'pitch', 'yaw', 'roll', 'joy', 'anger', 'surprise', 'valence', 'fear', 'sadness', 'disgust', 'neutral', 'smile',
         'brow_raise', 'brow_furrow', 'nose_wrinkle', 'upper_lip_raise', 'mouth_open', 'eye_closure', 'cheek_raise', 'yawn',
@@ -42,8 +43,8 @@ expressions_dict = defaultdict()
 emotions_dict = defaultdict()
 bounding_box_dict = defaultdict()
 mood_dict = defaultdict()
+dominant_emotion_dict = defaultdict()
 time_metrics_dict = defaultdict()
-faceId_set = set()
 
 
 
@@ -68,19 +69,20 @@ class Listener(af.ImageListener):
         global num_faces
         num_faces = faces
         for fid, face in faces.items():
-            faceId_set.update(faces.keys())
             measurements_dict[face.get_id()] = defaultdict()
             expressions_dict[face.get_id()] = defaultdict()
             emotions_dict[face.get_id()] = defaultdict()
             measurements_dict[face.get_id()].update(face.get_measurements())
             expressions_dict[face.get_id()].update(face.get_expressions())
             emotions_dict[face.get_id()].update(face.get_emotions())
-            mood_dict[face.get_id()] = Mood(mood=face.get_mood(), confidence=face.get_confidence(), dominant_emotion=face.get_dominant_emotion().dominant_emotion,
+            dominant_emotion_dict[face.get_id()] = DominantEmotion(dominant_emotion=face.get_dominant_emotion().dominant_emotion,
                                             dominant_emotion_confidence=face.get_dominant_emotion().confidence)
+            mood_dict[face.get_id()] = face.get_mood()
             bounding_box_dict[face.get_id()] = [face.get_bounding_box()[0].x,
                                                 face.get_bounding_box()[0].y,
                                                 face.get_bounding_box()[1].x,
-                                                face.get_bounding_box()[1].y]
+                                                face.get_bounding_box()[1].y,
+                                                face.get_confidence()]
 
     def image_captured(self, image):
         global capture_last_ts
@@ -132,7 +134,7 @@ def draw_bounding_box(frame):
             Frame object to draw the bounding box on.
 
     """
-    for fid, bb_points in bounding_box_dict.items():
+    for fid in bounding_box_dict.keys():
         upper_left_x, upper_left_y, lower_right_x, lower_right_y = get_bounding_box_points(fid)
         for key in emotions_dict[fid]:
             if 'valence' in str(key):
@@ -152,7 +154,7 @@ def draw_bounding_box(frame):
 
 def get_bounding_box_points(fid):
     """
-    Fetch upper_left_x, upper_left_y, upper_right_x, upper_right_y points of the bounding box.
+    Fetch upper_left_x, upper_left_y, lower_right_x, lwoer_right_y points of the bounding box.
 
         Parameters
         ----------
@@ -445,7 +447,7 @@ def run(csv_data):
         captureFile.set(cv2.CAP_PROP_FRAME_WIDTH, frame_width)
         #If cv2 silently fails, default to 1280 x 720 instead of 640 x 480
         if captureFile.get(3) != frame_width or captureFile.get(4) != frame_height:
-            print(f"{frame_width} x {frame_height} is an unsupported resolution, defaulting to 1280 x 720")
+            print(frame_width, "x", frame_height, "is an unsupported resolution, defaulting to 1280 x 720")
             cv2.resizeWindow('Processed Frame',DEFAULT_FRAME_WIDTH, DEFAULT_FRAME_HEIGHT)
             captureFile.set(cv2.CAP_PROP_FRAME_HEIGHT, DEFAULT_FRAME_HEIGHT)
             captureFile.set(cv2.CAP_PROP_FRAME_WIDTH, DEFAULT_FRAME_WIDTH)
@@ -529,6 +531,7 @@ def clear_all_dictionaries():
     expressions_dict.clear()
     measurements_dict.clear()
     mood_dict.clear()
+    dominant_emotion_dict.clear()
 
 
 
@@ -577,8 +580,8 @@ def check_bounding_box_outside(width, height):
     boolean: indicating if the bounding box is outside the frame or not
     """
     for fid in bounding_box_dict.keys():
-        x1, y1, x2, y2 = get_bounding_box_points(fid)
-        if x1 < 0 or x2 > width or y1 < 0 or y2 > height:
+        upper_left_x, upper_left_y, lower_right_x, lower_right_y = get_bounding_box_points(fid)
+        if upper_left_x < 0 or lower_right_x > width or upper_left_y < 0 or lower_right_y > height:
             return True
         return False
 
@@ -597,15 +600,17 @@ def write_metrics_to_csv_data_list(csv_data, timestamp):
 
     """
     global header_row
-    for fid in faceId_set:
+    if not measurements_dict.keys():
         current_frame_data = {}
         current_frame_data["TimeStamp"] = timestamp
-        current_frame_data["faceId"] = fid
-        if fid not in measurements_dict.keys():
-            for field in header_row[2:]:
-                current_frame_data[field] = NOT_A_NUMBER
-            csv_data.append(current_frame_data)
-        else:
+        for field in header_row[1:]:
+            current_frame_data[field] = NOT_A_NUMBER
+        csv_data.append(current_frame_data)
+    else:
+        for fid in measurements_dict.keys():
+            current_frame_data = {}
+            current_frame_data["TimeStamp"] = timestamp
+            current_frame_data["faceId"] = fid
             upperLeftX, upperLeftY, lowerRightX, lowerRightY = get_bounding_box_points(fid)
             current_frame_data["upperLeftX"] = upperLeftX
             current_frame_data["upperLeftY"] = upperLeftY
@@ -617,10 +622,10 @@ def write_metrics_to_csv_data_list(csv_data, timestamp):
                 current_frame_data[str(key).split('.')[1]] = round(val,4)
             for key,val in expressions_dict[fid].items():
                 current_frame_data[str(key).split('.')[1]] = round(val,4)
-            current_frame_data["mood"] = str(mood_dict[fid].mood).split('.')[1]
-            current_frame_data["dominant_emotion_confidence"] = round(mood_dict[fid].dominant_emotion_confidence,4)
-            current_frame_data["dominant_emotion"] = str(mood_dict[fid].dominant_emotion).split('.')[1]
-            current_frame_data["confidence"] = round(mood_dict[fid].confidence,4)
+            current_frame_data["mood"] = str(mood_dict[fid]).split('.')[1]
+            current_frame_data["dominant_emotion_confidence"] = round(dominant_emotion_dict[fid].dominant_emotion_confidence,4)
+            current_frame_data["dominant_emotion"] = str(dominant_emotion_dict[fid].dominant_emotion).split('.')[1]
+            current_frame_data["confidence"] = round(bounding_box_dict[fid][4],4)
             csv_data.append(current_frame_data)
 
 
@@ -633,7 +638,7 @@ def parse_command_line():
     -------
     args: argparse object of the command line
     """
-    parser = argparse.ArgumentParser(description="Sample code for demoing affdexface on webcam or a saved video file.\n \
+    parser = argparse.ArgumentParser(description="Sample code for demoing affvisionpy module on webcam or a saved video file.\n \
         By default, the program will run with the camera parameter displaying frames of size 1280 x 720.\n \
         A CSV file will also be written by default with the filename 'default.csv'. ")
     parser.add_argument("-d", "--data", dest="data", required=True, help="path to directory containing the models")
