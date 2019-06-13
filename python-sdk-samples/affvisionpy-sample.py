@@ -4,12 +4,11 @@ import csv
 import os
 import time
 from collections import defaultdict
-from collections import namedtuple
 
 import affvisionpy as af
 import cv2 as cv2
 import math
-import queue
+
 
 
 # Constants
@@ -30,20 +29,18 @@ HEIGHT = 1
 process_last_ts = 0.0
 capture_last_ts = 0.0
 
-DominantEmotion = namedtuple("DominantEmotion", ['dominant_emotion','dominant_emotion_confidence'])
+
 
 header_row = ['TimeStamp', 'faceId', 'upperLeftX', 'upperLeftY', 'lowerRightX', 'lowerRightY', 'confidence', 'interocular_distance',
         'pitch', 'yaw', 'roll', 'joy', 'anger', 'surprise', 'valence', 'fear', 'sadness', 'disgust', 'neutral', 'smile',
         'brow_raise', 'brow_furrow', 'nose_wrinkle', 'upper_lip_raise', 'mouth_open', 'eye_closure', 'cheek_raise', 'yawn',
-        'blink', 'blink_rate', 'eye_widen', 'inner_brow_raise', 'lip_corner_depressor', 'mood', 'dominant_emotion', 'dominant_emotion_confidence'
+        'blink', 'blink_rate', 'eye_widen', 'inner_brow_raise', 'lip_corner_depressor'
         ]
 
 measurements_dict = defaultdict()
 expressions_dict = defaultdict()
 emotions_dict = defaultdict()
 bounding_box_dict = defaultdict()
-mood_dict = defaultdict()
-dominant_emotion_dict = defaultdict()
 time_metrics_dict = defaultdict()
 
 
@@ -75,9 +72,6 @@ class Listener(af.ImageListener):
             measurements_dict[face.get_id()].update(face.get_measurements())
             expressions_dict[face.get_id()].update(face.get_expressions())
             emotions_dict[face.get_id()].update(face.get_emotions())
-            dominant_emotion_dict[face.get_id()] = DominantEmotion(dominant_emotion=face.get_dominant_emotion().dominant_emotion,
-                                            dominant_emotion_confidence=face.get_dominant_emotion().confidence)
-            mood_dict[face.get_id()] = face.get_mood()
             bounding_box_dict[face.get_id()] = [face.get_bounding_box()[0].x,
                                                 face.get_bounding_box()[0].y,
                                                 face.get_bounding_box()[1].x,
@@ -531,8 +525,6 @@ def clear_all_dictionaries():
     emotions_dict.clear()
     expressions_dict.clear()
     measurements_dict.clear()
-    mood_dict.clear()
-    dominant_emotion_dict.clear()
 
 
 
@@ -623,9 +615,6 @@ def write_metrics_to_csv_data_list(csv_data, timestamp):
                 current_frame_data[str(key).split('.')[1]] = round(val,4)
             for key,val in expressions_dict[fid].items():
                 current_frame_data[str(key).split('.')[1]] = round(val,4)
-            current_frame_data["mood"] = str(mood_dict[fid]).split('.')[1]
-            current_frame_data["dominant_emotion_confidence"] = round(dominant_emotion_dict[fid].dominant_emotion_confidence,4)
-            current_frame_data["dominant_emotion"] = str(dominant_emotion_dict[fid].dominant_emotion).split('.')[1]
             current_frame_data["confidence"] = round(bounding_box_dict[fid][4],4)
             csv_data.append(current_frame_data)
 
