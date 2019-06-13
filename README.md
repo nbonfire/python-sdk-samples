@@ -6,9 +6,7 @@ This script demonstrates how to use Affectiva's affvisionpy module to process fr
 
 1. Make sure you have **affvisionpy**
 
-2. **cd** into the directory containing the setup.py script and run: **sudo python3 setup.py install**.
-
-    Alternative to step 2 : **cd** into the directory having the requirements.txt file and run **pip3 install -r requirements.txt**
+2. **cd** into the directory having the requirements.txt file and run **pip3 install -r requirements.txt**
 
 
 ## Steps to run the script: ##
@@ -41,9 +39,9 @@ This script demonstrates how to use Affectiva's affvisionpy module to process fr
 
           -r --resolution WIDTH HEIGHT   set the resolution in pixels (width, height) for the webcam. Defaults to 1280 x 720 resolution.
           
-    **Note**: if only the data argument is supplied, the script defaults the run to a webcam and 1 face detection, with the output written to "default.csv"
-    displaying frames at default size of 1280 x 720. Only certain standard frame sizes are supported. For any unsupported frame sizes, the webcam frame size defaults
-    to 1280 x 720. If any other configuration is required, it can be done using optional arguments.
+    **Note**: if only the data argument is supplied, the script defaults the run to a webcam and 1 face detection, displaying frames 
+    at default size of 1280 x 720. Only certain standard frame sizes are supported. For any unsupported frame sizes, the webcam frame 
+    size defaults to 1280 x 720. If any other configuration is required, it can be done using optional arguments.
 
 
 
@@ -79,10 +77,10 @@ This script demonstrates how to use Affectiva's affvisionpy module to process fr
 
 ## Additional Notes ##
 
-5.  For both video and webcam options, a CSV file is written with the metrics. By default, the CSV file will be named "default.csv".
+5.  For the video option, a CSV file is written with the metrics. By default, the CSV file will be named with the same name as the video file.
 
 6.  For both video and webcam options, the script displays real-time metrics on the screen.
 
-7.  To get the output metrics in a file of your choice, give the name of the file with -f on the command line.
+7.  To get the output metrics in a file of your choice, give the name of the file with -f on the command line. If a CSV file is desired for the webcam option, the -f flag must be supplied. 
 
 8.  To get the output video, use the option -o along with the output file name.
